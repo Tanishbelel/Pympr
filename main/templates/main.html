@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+{% block title %}Home - College Portal{% endblock %}
+
+{% block start %}
+<style>
+/* Core card styles */
+.glass-card {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    transition: box-shadow 0.3s ease;
+}
+
+.glass-card:hover {
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* Notification card styles */
+.notification-card {
+    transition: transform 0.3s ease, background-color 0.3s ease;
+    border-left: 4px solid transparent;
+}
+
+.notification-card:hover {
+    transform: translateX(4px);
+    background-color: #f8fafc;
+}
+
+.notification-card.important {
+    border-left-color: #ef4444;
+}
+
+.notification-card.new {
+    border-left-color: #4f46e5;
+}
+
+.notification-card.event {
+    border-left-color: #10b981;
+}
+
+/* Button styles */
+.auth-button {
+    transition: all 0.2s ease;
+    position: relative;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.auth-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Badge animation */
+.animate-badge {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Header section */
+.header-section {
+    background: #ffffff;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 1.25rem;
+}
+
+/* Status badges */
+.status-badge {
+    padding: 0.375rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.status-badge-important {
+    background-color: #fef2f2;
+    color: #ef4444;
+}
+
+.status-badge-new {
+    background-color: #eef2ff;
+    color: #4f46e5;
+}
+
+.status-badge-event {
+    background-color: #ecfdf5;
+    color: #10b981;
+}
+.but a {
+    position: relative;
+    display: inline-block;
+    padding: 15px 30px;
+    border: 2px solid #fefefe;
+    text-transform: uppercase;
+    color: #212121;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 20px;
+  }
+  
+  .but a::before {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: -2px;
+    width: calc(100% + 4px);
+    height: calc(100% - 12px);
+    background-color:#fefefe;
+    transition: 0.3s ease-in-out;
+    transform: scaleY(1);
+  }
+  
+  .but a:hover::before {
+    transform: scaleY(0);
+  }
+  
+  .but a::after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: -2px;
+    height: calc(100% + 4px);
+    width: calc(100% - 12px);
+    background-color: #fefefe;
+    transition: 0.3s ease-in-out;
+    transform: scaleX(1);
+    transition-delay: 0.5s;
+  }
+  
+  .but a:hover::after {
+    transform: scaleX(0);
+  }
+  
+  .but span {
+    position: relative;
+    z-index: 3;
+  }
+  
+  .but {
+    background-color: none;
+    text-decoration: none;
+    background-color: #fefefe;
+    border: none;
+  }
+</style>
+
+<main class="min-h-screen bg-white py-8">
+    <div class="container mx-auto px-4">
+        {% if not user.is_authenticated %}
+        <!-- Authentication Buttons -->
+        <div class="flex justify-end space-x-4 mb-8">
+            <button class = "but">
+                <a href="{% url 'login' %}"><span>Login</span></a> 
+                </button>
+                <button class = "but">
+                    <a href="{% url 'register' %}"><span>Register</span></a> 
+                    </button>
+        </div>
+        {% endif %}
+
+        <!-- Notifications Section -->
+        <div class="max-w-3xl mx-auto">
+            <div class="glass-card rounded-xl overflow-hidden">
+                <!-- Header -->
+                <div class="header-section">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-xl font-bold text-gray-900">College Updates</h2>
+                        <span class="status-badge bg-indigo-100 text-indigo-600 animate-badge">
+                            Latest News
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Notifications List -->
+                <div class="divide-y divide-gray-100">
+                    <!-- Important Notice -->
+                    <div class="notification-card important p-5">
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-base font-bold text-gray-900">ISE 2 Schedule Announced</h3>
+                                <span class="status-badge status-badge-important">
+                                    Important
+                                </span>
+                            </div>
+                            <p class="mt-2 text-gray-600">Examinations will commence from next week. Check your hall tickets and schedule.</p>
+                            <div class="mt-3 text-sm text-gray-500">2 hours ago</div>
+                        </div>
+                    </div>
+
+                    <!-- Regular Updates -->
+                    <div class="notification-card new p-5">
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-base font-bold text-gray-900">Marks Updated</h3>
+                                <span class="status-badge status-badge-new">
+                                    New
+                                </span>
+                            </div>
+                            <p class="mt-2 text-gray-600">Mathematics ISE 2 marks have been updated. Check your results in the portal.</p>
+                            <div class="mt-3 text-sm text-gray-500">3 days ago</div>
+                        </div>
+                    </div>
+
+                    <!-- Event Update -->
+                    <div class="notification-card event p-5">
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-base font-bold text-gray-900">Technical Symposium</h3>
+                                <span class="status-badge status-badge-event">
+                                    Event
+                                </span>
+                            </div>
+                            <p class="mt-2 text-gray-600">Annual technical symposium registration is now open. Register before seats fill up!</p>
+                            <div class="mt-3 text-sm text-gray-500">1 week ago</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
