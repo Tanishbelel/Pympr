@@ -4,9 +4,7 @@ from .models import Student, Subject, Attendance, Marks
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
-    list_display = ('roll_number', 'user', 'semester')
-    search_fields = ('roll_number', 'user__username')
-
+    list_display = ['user', 'roll_number']  
 @admin.register(Subject)
 class SubjectAdmin(admin.ModelAdmin):
     list_display = ('name', 'code')
@@ -14,13 +12,15 @@ class SubjectAdmin(admin.ModelAdmin):
 
 @admin.register(Attendance)
 class AttendanceAdmin(admin.ModelAdmin):
-    list_display = ('student', 'subject', 'date', 'present')
-    list_filter = ('present', 'subject', 'date')
-    search_fields = ('student__roll_number', 'subject__name')
+    list_display = ('student', 'subject', 'date', 'attendance_status')
+    list_filter = ('attendance_status', 'date', 'subject')
+    search_fields = ('student__user__first_name', 'student__user__last_name', 'student__roll_number')
     date_hierarchy = 'date'
+    list_per_page = 50
 
+    def get_student_name(self, obj):
+        return obj.student.user.get_full_name()
+    get_student_name.short_description = 'Student Name'
 @admin.register(Marks)
 class MarksAdmin(admin.ModelAdmin):
-    list_display = ('student', 'subject', 'exam_type', 'marks_obtained', 'total_marks')
-    list_filter = ('exam_type', 'subject')
-    search_fields = ('student__roll_number', 'subject__name')
+    list_display = ['student', 'subject', 'exam_type', 'obtained_marks']  

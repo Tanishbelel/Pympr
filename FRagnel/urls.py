@@ -27,6 +27,8 @@ urlpatterns = [
     path('dashboard/', dashboard, name='dashboard'),
     path('attendance/', attendance_page, name='attendance'),
     path('marks/', marks_page, name='marks'),
+    path('upload-marks/', upload_marks, name='upload_marks'),
+    path('manage-attendance/', manage_attendance, name='manage_attendance'),
     
 
 ]

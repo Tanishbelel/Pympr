@@ -5,7 +5,6 @@ from django.contrib.auth.models import User
 class Student(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     roll_number = models.CharField(max_length=20)
-    semester = models.IntegerField()
 
     def __str__(self):
         return f"{self.user.username} - {self.roll_number}"
@@ -18,28 +17,31 @@ class Subject(models.Model):
         return self.name
 
 class Attendance(models.Model):
+    STATUS_CHOICES = [
+        ('present', 'Present'),
+        ('absent', 'Absent'),
+        ('late', 'Late'),
+    ]
+    
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
-    date = models.DateField()
-    present = models.BooleanField(default=False)
+    date = models.DateField(auto_now_add=True)
+    attendance_status = models.CharField(max_length=10, choices=STATUS_CHOICES)  # Changed from 'status' to 'attendance_status'
+    notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = ['student', 'subject', 'date']
 
+    def __str__(self):
+        return f"{self.student} - {self.subject} - {self.date}"
+
 class Marks(models.Model):
-    EXAM_TYPES = [
-        ('ISE1', 'First Internal'),
-        ('MSE', 'Mid Semester'),
-        ('ISE2', 'Second Internal'),
-        ('ESE', 'End Semester'),
-    ]
-
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
-    exam_type = models.CharField(max_length=4, choices=EXAM_TYPES)
-    marks_obtained = models.DecimalField(max_digits=5, decimal_places=2)
-    total_marks = models.DecimalField(max_digits=5, decimal_places=2)
-
+    subject = models.CharField(max_length=100)
+    exam_type = models.CharField(max_length=10)
+    obtained_marks = models.IntegerField()
+    total_marks = models.IntegerField()
+    
     class Meta:
-        unique_together = ['student', 'subject', 'exam_type']
-
+        unique_together = ('student', 'subject', 'exam_type')

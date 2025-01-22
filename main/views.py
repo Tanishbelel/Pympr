@@ -4,12 +4,13 @@ from .models import *
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth import authenticate,login,logout
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required,user_passes_test
 from datetime import timedelta, date
 from django.db.models import Q
 from django.db.models import Count
-
+from .forms import MarksUploadForm
 from django.http import JsonResponse
+from datetime import datetime
 # Create your views here.
 
 
@@ -150,74 +151,123 @@ def attendance_page(request):
 
 @login_required
 def marks_page(request):
-    context = {
-        'overall_percentage': 82.5,
-        'subjects': {
-            'Mathematics': {
-                'marks': {
-                    'ISE1': {'obtained': 18, 'total': 20, 'percentage': 90},
-                    'MSE': {'obtained': 24, 'total': 30, 'percentage': 80},
-                    'ISE2': {'obtained': 16, 'total': 20, 'percentage': 80},
-                    'ESE': {'obtained': 24, 'total': 30, 'percentage': 80}
-                },
-                'total_obtained': 82,
-                'total_marks': 100,
-                'grade': 'A',
-                'percentage': 82  # Added total percentage
-            },
-            'Data-Structure': {
-                'marks': {
-                    'ISE1': {'obtained': 15, 'total': 20, 'percentage': 75},
-                    'MSE': {'obtained': 82, 'total': 100, 'percentage': 82},
-                    'ISE2': {'obtained': 25, 'total': 30, 'percentage': 83.33},
-                    'ESE': {'obtained': 80, 'total': 100, 'percentage': 80}
-                },
-                'total_obtained': 202,
-                'total_marks': 250,
-                'grade': 'A',
-                'percentage': 80.8  # Added total percentage
-            },
-            'Java': {
-                'marks': {
-                    'ISE1': {'obtained': 16, 'total': 20, 'percentage': 80},
-                    'MSE': {'obtained': 85, 'total': 100, 'percentage': 85},
-                    'ISE2': {'obtained': 25, 'total': 30, 'percentage': 83.33},
-                    'ESE': {'obtained': 85, 'total': 100, 'percentage': 85}
-                },
-                'total_obtained': 211,
-                'total_marks': 250,
-                'grade': 'A',
-                'percentage': 84.4  # Added total percentage
-            },
-            'Python': {
-                'marks': {
-                    'ISE1': {'obtained': 18, 'total': 20, 'percentage': 90},
-                    'MSE': {'obtained': 90, 'total': 100, 'percentage': 90},
-                    'ISE2': {'obtained': 27, 'total': 30, 'percentage': 90},
-                    'ESE': {'obtained': 88, 'total': 100, 'percentage': 88}
-                },
-                'total_obtained': 223,
-                'total_marks': 250,
-                'grade': 'A+',
-                'percentage': 89.2  # Added total percentage
-            },
-            'React': {
-                'marks': {
-                    'ISE1': {'obtained': 17, 'total': 20, 'percentage': 85},
-                    'MSE': {'obtained': 88, 'total': 100, 'percentage': 88},
-                    'ISE2': {'obtained': 26, 'total': 30, 'percentage': 86.67},
-                    'ESE': {'obtained': 85, 'total': 100, 'percentage': 85}
-                },
-                'total_obtained': 216,
-                'total_marks': 250,
-                'grade': 'A',
-                'percentage': 86.4  # Added total percentage
+    student = request.user.student
+    marks_data = Marks.objects.filter(student=student)
+    
+    subjects = {}
+    overall_total = 0
+    overall_obtained = 0
+    
+    for mark in marks_data:
+        if mark.subject not in subjects:
+            subjects[mark.subject] = {
+                'marks': {},
+                'total_obtained': 0,
+                'total_marks': 0,
+                'grade': '',
+                'percentage': 0
             }
+        
+        percentage = (mark.obtained_marks / mark.total_marks) * 100
+        subjects[mark.subject]['marks'][mark.exam_type] = {
+            'obtained': mark.obtained_marks,
+            'total': mark.total_marks,
+            'percentage': percentage
         }
-    }
-
-    # Calculate percentage for each subject
-    for subject_data in context['subjects'].values():
+        
+        subjects[mark.subject]['total_obtained'] += mark.obtained_marks
+        subjects[mark.subject]['total_marks'] += mark.total_marks
+        
+        overall_obtained += mark.obtained_marks
+        overall_total += mark.total_marks
+    
+    # Calculate percentages and grades
+    for subject_data in subjects.values():
         subject_data['percentage'] = (subject_data['total_obtained'] / subject_data['total_marks']) * 100
-
+    
+    overall_percentage = (overall_obtained / overall_total * 100) if overall_total > 0 else 0
+    
+    context = {
+        'overall_percentage': overall_percentage,
+        'subjects': subjects
+    }
+    
     return render(request, 'marks.html', context)
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def upload_marks(request):
+    students = Student.objects.all()  # Get all students
+    if request.method == 'POST':
+        form = MarksUploadForm(request.POST)
+        if form.is_valid():
+            student = form.cleaned_data['student']
+            subject = form.cleaned_data['subject']
+            exam_type = form.cleaned_data['exam_type']
+            marks = form.cleaned_data['marks']
+            
+            total_marks = 20 if exam_type in ['ISE1', 'ISE2'] else 30
+            
+            Marks.objects.update_or_create(
+                student=student,
+                subject=subject,
+                exam_type=exam_type,
+                defaults={
+                    'obtained_marks': marks,
+                    'total_marks': total_marks
+                }
+            )
+            return redirect('marks')
+    else:
+        form = MarksUploadForm()
+    return render(request, 'upload_marks.html', {'form': form, 'students': students})
+    
+@login_required
+def marks_page(request):
+    try:
+        student = request.user.student
+        # Get all marks for the student
+        marks = Marks.objects.filter(student=student)
+        context = {
+            'student': student,
+            'marks': marks
+        }
+        return render(request, 'viewmarks.html', context)
+    except Student.DoesNotExist:
+        messages.error(request, "No student profile found.")
+        return redirect('upload_marks') 
+    
+@login_required
+def manage_attendance(request):
+    # Get the subject (you might want to pass this as a parameter or select it in the form)
+    subject = Subject.objects.first()  # Or get it based on your logic
+    students = Student.objects.all().order_by('roll_number')
+
+    if request.method == 'POST':
+        attendance_date = datetime.now().date()
+        
+        # Process attendance for each student
+        for student in students:
+            attendance_status = request.POST.get(f'attendance_{student.id}')
+            notes = request.POST.get(f'notes_{student.id}', '')
+            
+            if attendance_status:
+                # Create or update attendance record
+                Attendance.objects.update_or_create(
+                    student=student,
+                    subject=subject,
+                    date=attendance_date,
+                    defaults={
+                        'attendance_status': attendance_status,  # Changed from 'status' to 'attendance_status'
+                        'notes': notes
+                    }
+                )
+        
+        messages.success(request, 'Attendance has been recorded successfully!')
+        return redirect('attendance_list')  # Make sure this URL pattern exists
+
+    context = {
+        'subject': subject,
+        'students': students,
+    }
+    return render(request, 'updateattendance.html', context)
